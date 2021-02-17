@@ -5,13 +5,13 @@ pipline {
    stages {
    
      stage("build) {
-     
+         echo 'building the application ...'
        steps {
           
        }
      }
      stages("test") {
-      
+        echo 'testing the application ...'
        steps {
           
        }
@@ -19,7 +19,7 @@ pipline {
     }
     
     stages("deploy") {
-      
+         echo 'deploying the application ...'
        steps {
        
         }
