@@ -1,20 +1,24 @@
 FROM jenkins/jenkins:2.263.4-lts-jdk11
-ARG HOST_UID=1001
-ARG HOST_GID=998
+
+COPY plugins.txt /usr/share/jenkins/
+RUN /usr/local/bin/install-plugins.sh $(cat /usr/share/jenkins/plugins.txt)
+
+ENV JENKINS_SWARM_PLUGIN_VERSION=2.2
+
 USER root
-RUN apt-get update && apt-get install -y apt-transport-https ca-certificates curl gnupg2 software-properties-common
-RUN curl -fsSL https://download.docker.com/linux/debian/gpg | apt-key add -
-RUN apt-key fingerprint 0EBFCD88
-RUN add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/debian $(lsb_release -cs) stable"
-RUN apt-get update
-RUN apt-get install -y docker-ce docker-ce-cli containerd.io
-RUN usermod -u $HOST_UID jenkins
-RUN groupmod -g $HOST_GID docker
-RUN usermod -aG docker jenkins
-ENV JENKINS_SLAVE_AGENT_PORT 50000
-COPY resources/plugins/plugins.txt /usr/share/jenkins/ref/
-RUN /usr/local/bin/install-plugins.sh $(cat /usr/share/jenkins/ref/plugins.txt)
-COPY resources/users/*.groovy /usr/share/jenkins/ref/init.groovy.d/
-USER jenkins
+
+RUN curl -s -o /bin/swarm-client.jar \
+    -k http://repo.jenkins-ci.org/releases/org/jenkins-ci/plugins/swarm-client/${JENKINS_SWARM_PLUGIN_VERSION}/swarm-client-${JENKINS_SWARM_PLUGIN_VERSION}-jar-with-dependencies.jar
+
+COPY wait-for.sh /usr/share/jenkins/
+
+CMD /usr/share/jenkins/wait-for.sh jenkins:50000 -- java -jar /bin/swarm-client.jar -executors ${SLAVE_EXECUTORS} -description "${SLAVE_DESCRIPTION}" -master ${SWARM_MASTER} -username ${SWARM_USER} -password ${SWARM_PASSWORD} -name "${SLAVE_NAME}" -labels "${SLAVE_LABELS}" -mode ${SLAVE_MODE}
+
+# USER root
+
+# RUN apk add --update tar && curl -sSL https://get.rvm.io | bash && \
+#     source /usr/local/rvm/scripts/rvm && \
+#     curl -sSL https://get.rvm.io | bash -s stable --ruby && \
+#     rvm install ruby-2.3.3
 
 
