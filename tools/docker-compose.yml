@@ -1,11 +1,11 @@
 version: "2"
-​
+
 networks:
   custom:
     driver: bridge
-​
+
 services:
-​
+
   proxy:
     image: hrak/nginx-ldap:1.16.1
     container_name: proxy
@@ -18,7 +18,7 @@ services:
       - "8080:8080"
     links:
       - grafana
-​
+
   openldap:
     container_name: openldap
     build: ./openldap
@@ -30,20 +30,13 @@ services:
       - LDAP_ADMIN_PASSWORD=admin
   
   jenkins:
-    build:
-      context: ./jenkins_master
-      args:
-        HOST_UID: 1001
-        HOST_GID: 998
+    build: jenkins_master/
     container_name: jenkins
     networks:
       - custom
     environment:
       - JENKINS_OPTS=--prefix=/jenkins
-    volumes: 
-      - /var/run/docker.sock:/var/run/docker.sock
-      - /srv/www/jenkins:/var/jenkins_home
-​
+
   jenkins_slave:
     build: jenkins_slave/
     container_name: jenkins_slave
@@ -70,7 +63,7 @@ services:
       - "3000"
     volumes:
       - "./gogs/conf:/data/gogs/conf"
-​
+
   prometheus:
     image: prom/prometheus:v1.5.2
     container_name: prometheus
@@ -81,13 +74,13 @@ services:
     command:
       - "-web.external-url=http://127.0.0.1:8080/prometheus"
       - "-config.file=/etc/prometheus/prometheus.yml"
-​
+
   node_exporter:
-    image: prom/node-exporter:v1.1.1
+    image: prom/node-exporter:v0.13.0
     container_name: node_exporter
     networks:
       - custom
-​
+
   grafana:
     image: grafana/grafana:4.3.2
     container_name: grafana
@@ -100,3 +93,4 @@ services:
     depends_on:
       - prometheus
     expose:
+      - "3000"
